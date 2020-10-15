@@ -18,7 +18,7 @@ The architecture is composed by 3 main types of components:
 - Adapters that can be added to the registry maintained by the Core to change the state of the Core.
 
 **Core Modules** 
-- The core module named Registry keeps track of all registered core modules, so they can be verified during the call executions
+- The Core  contains two different files: Registry, which keeps track of all registered core modules, so they can be verified during the call executions, and then Core, which maintains the state of the DAO primitives and contains a set of basic functions related to such primitives. 
 - Only Adapters or other parts of the Core are allowed to call a Core Module function
 - The Core does not communicate with contract external to the DAO (ie. not included in the registry) directly, it needs to go through an Adapter
 - Each core module is a Smart Contract with the `onlyAdapter` and/or `onlyModule` modifiers applied to its functions, it shall not expose its functions in a public way (`external` or `public` modifier should not be added to core module functions, except for the read-only functions)
@@ -35,7 +35,7 @@ The architecture is composed by 3 main types of components:
 
 ![moloch_v3_architecture](https://user-images.githubusercontent.com/708579/92758048-b8be9b80-f364-11ea-9c42-ac8b75cf26c4.png)
 
-*illustration by David Roon and Open Law*
+*illustration by David Roon, Felipe Fobeck and Open Law*
 
 
 ### Usage

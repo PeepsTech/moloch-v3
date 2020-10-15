@@ -10,21 +10,15 @@ contract('MolochV3 - Ragequit Adapter', async accounts => {
   
     let dao = await createDao({}, myAccount);
 
-    const bankAddress = await dao.getAddress(sha3("bank"));
-    const bank = await BankContract.at(bankAddress);
+    const coreAddress = await dao.getAddress(sha3("core"));
+    const core = await CoreContract.at(coreAddress);
 
     //Add funds to the Guild Bank after sposoring a member to join the Guild
     const onboardingAddress = await dao.getAddress(sha3('onboarding'));
     const onboarding = await OnboardingContract.at(onboardingAddress);
 
-    const proposalAddress = await dao.getAddress(sha3("proposal"));
-    const proposal = await ProposalContract.at(proposalAddress);
-
     const votingAddress = await dao.getAddress(sha3("voting"));
     const voting = await VotingContract.at(votingAddress);
-
-    const memberAddress = await dao.getAddress(sha3("member"));
-    const member = await MemberContract.at(memberAddress);
 
     await dao.sendTransaction({ from: newMember, value: sharePrice.mul(toBN(10)).add(remaining), gasPrice: toBN("0") });
     //Get the new proposal id
@@ -38,7 +32,7 @@ contract('MolochV3 - Ragequit Adapter', async accounts => {
     await onboarding.processProposal(dao.address, proposalId, { from: myAccount, gasPrice: toBN("0") });
 
     //Check Guild Bank Balance
-    let guildBalance = await bank.balanceOf(dao.address, GUILD, ETH_TOKEN);
+    let guildBalance = await core.balanceOf(dao.address, GUILD, ETH_TOKEN);
     let expectedGuildBalance = toBN("1200000000000000000");
     assert.equal(toBN(guildBalance).toString(), expectedGuildBalance.toString());
 
