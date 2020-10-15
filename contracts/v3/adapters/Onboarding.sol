@@ -52,12 +52,12 @@ contract OnboardingContract is IOnboarding, Module, AdapterGuard, ModuleGuard {
     }
 
     function updateDelegateKey(Registry dao, address delegateKey) external {
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
+        IMember memberContract = IMember(dao.getAddress(CORE_MODULE));
         memberContract.updateDelegateKey(dao, msg.sender, delegateKey);
     }
 
     function _submitMembershipProposal(Registry dao, address newMember, uint256 sharesRequested, uint256 amount) internal {
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         uint256 proposalId = proposalContract.createProposal(dao);
         ProposalDetails storage proposal = proposals[address(dao)][proposalId];
         proposal.amount = amount;
@@ -66,19 +66,19 @@ contract OnboardingContract is IOnboarding, Module, AdapterGuard, ModuleGuard {
     }
 
     function sponsorProposal(Registry dao, uint256 proposalId, bytes calldata data) override external onlyMember(dao) {
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         proposalContract.sponsorProposal(dao, proposalId, msg.sender, data);
     }
 
     function processProposal(Registry dao, uint256 proposalId) override external {
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
+        IMember memberContract = IMember(dao.getAddress(CORE_MODULE));
         require(memberContract.isActiveMember(dao, msg.sender), "only members can sponsor a membership proposal");
         IVoting votingContract = IVoting(dao.getAddress(VOTING_MODULE));
         require(votingContract.voteResult(dao, proposalId) == 2, "proposal need to pass to be processed");
         ProposalDetails storage proposal = proposals[address(dao)][proposalId];
         memberContract.updateMember(dao, proposal.applicant, proposal.sharesRequested);
         
-        IBank bankContract = IBank(dao.getAddress(BANK_MODULE));
+        IBank bankContract = IBank(dao.getAddress(CORE_MODULE));
         // address 0 represents native ETH
         bankContract.addToGuild(dao, address(0), proposal.amount);
     }

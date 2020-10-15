@@ -50,7 +50,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         mapping(address => mapping(address => uint256)) tokenBalances;
     }
 
-    uint256 public totalShares = 1; // Maximum number of shares 2**256 - 1
+    uint256 public totalShares = 0; // Maximum number of shares 2**256 - 1
 
     // Member Mappings 
     mapping(address => mapping(address => Member)) members;
@@ -68,7 +68,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
             PROPOSAL FUNCTIONS 
     ************************************/
 
-    function isActiveMember(Registry dao, address addr) override external view returns (bool) {
+    function isActiveMember(Registry dao, address addr) override public view returns (bool) {
         address memberAddr = memberAddressesByDelegatedKey[address(dao)][addr];
         uint256 memberFlags = members[address(dao)][memberAddr].flags;
         return memberFlags.exists() && !memberFlags.isJailed() && members[address(dao)][memberAddr].nbShares > 0;
@@ -112,7 +112,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         emit UpdateDelegateKey(address(dao), memberAddr, newDelegateKey);
     }
 
-    function burnShares(Registry dao, address memberAddr, uint256 sharesToBurn) override external onlyModule(dao) {
+    function burnShares(Registry dao, address memberAddr, uint256 sharesToBurn) override public onlyModule(dao) {
         require(_enoughSharesToBurn(dao, memberAddr, sharesToBurn), "insufficient shares");
         
         Member storage member = members[address(dao)][memberAddr];
@@ -129,7 +129,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         return members[address(dao)][member].nbShares;
     }
 
-    function getTotalShares() override external view returns(uint256) {
+    function getTotalShares() override public view returns(uint256) {
         return totalShares;
     }
 
@@ -162,9 +162,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         require(proposal.flags.exists(), "proposal does not exist for this dao");
         require(!proposal.flags.isSponsored(), "the proposal has already been sponsored");
         require(!proposal.flags.isCancelled(), "the proposal has been cancelled");
-
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
-        require(memberContract.isActiveMember(dao, sponsoringMember), "only active members can sponsor someone joining");
+        require(isActiveMember(dao, sponsoringMember), "only active members can sponsor someone joining");
 
         IVoting votingContract = IVoting(dao.getAddress(VOTING_MODULE));
         uint256 votingId = votingContract.startNewVotingForProposal(dao, proposalId, votingData);
@@ -175,7 +173,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
     /***********************************
             BANK FUNCTIONS 
     ************************************/
-    function addToEscrow(Registry dao, address token, uint256 amount) override external onlyModule(dao) {
+    function addToEscrow(Registry dao, address token, uint256 amount) external onlyModule(dao) {
         require(token != GUILD && token != ESCROW && token != TOTAL, "invalid token");
         unsafeAddToBalance(address(dao), ESCROW, token, amount);
         if (!states[address(dao)].availableTokens[token]) {
@@ -185,7 +183,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         }
     }
 
-    function addToGuild(Registry dao, address token, uint256 amount) override external onlyModule(dao) {
+    function addToGuild(Registry dao, address token, uint256 amount) external onlyModule(dao) {
         require(token != GUILD && token != ESCROW && token != TOTAL, "invalid token");
         unsafeAddToBalance(address(dao), GUILD, token, amount);
         if (!states[address(dao)].availableTokens[token]) {
@@ -195,7 +193,7 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         }
     }
     
-    function transferFromGuild(Registry dao, address applicant, address token, uint256 amount) override external onlyModule(dao) {
+    function transferFromGuild(Registry dao, address applicant, address token, uint256 amount) external onlyModule(dao) {
         require(states[address(dao)].tokenBalances[GUILD][token] >= amount, "insufficient balance");
         unsafeSubtractFromBalance(address(dao), GUILD, token, amount);
         unsafeAddToBalance(address(dao), applicant, token, amount);
@@ -204,12 +202,11 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
 
 
     // @DEV - should this be a core function or put into an adapter so that people can ragequit individual tokens? 
-    function ragequit(Registry dao, address memberAddr, uint256 sharesToBurn) override external onlyModule(dao) {
+    function ragequit(Registry dao, address memberAddr, uint256 sharesToBurn) external onlyModule(dao) {
         //Get the total shares before burning member shares
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
-        uint256 totalShares = memberContract.getTotalShares();
+        uint256 totalShares = getTotalShares();
         //Burn shares if member has enough shares
-        memberContract.burnShares(dao, memberAddr, sharesToBurn);
+        burnShares(dao, memberAddr, sharesToBurn);
         //Update internal Guild and Member balances
         for (uint256 i = 0; i < states[address(dao)].tokens.length; i++) {
             address token = states[address(dao)].tokens[i];
@@ -226,14 +223,14 @@ contract Core is IMember, IProposal, Module, ModuleGuard, ReentrancyGuard {
         }
     }
 
-    function isNotReservedAddress(address applicant) override pure external returns (bool) {
+    function isNotReservedAddress(address applicant) pure external returns (bool) {
         return applicant != address(0x0) && applicant != GUILD && applicant != ESCROW && applicant != TOTAL;
     }
 
     /**
      * Public read-only functions 
      */
-    function balanceOf(Registry dao, address user, address token) override external view returns (uint256) {
+    function balanceOf(Registry dao, address user, address token) external view returns (uint256) {
         return states[address(dao)].tokenBalances[user][token];
     }
     

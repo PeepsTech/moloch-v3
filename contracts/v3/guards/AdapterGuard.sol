@@ -16,7 +16,7 @@ abstract contract AdapterGuard is Module {
      * @dev Only members of the Guild are allowed to execute the function call.
      */
     modifier onlyMember(Registry dao) {
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
+        IMember memberContract = IMember(dao.getAddress(CORE_MODULE));
         require(memberContract.isActiveMember(dao, msg.sender), "only DAO members are allowed to call this function");
         _;
     }

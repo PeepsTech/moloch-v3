@@ -4,10 +4,10 @@ pragma solidity ^0.7.0;
 
 import './Module.sol';
 import './Registry.sol';
+import './Core.sol';
 import '../adapters/interfaces/IVoting.sol';
 import '../core/interfaces/IProposal.sol';
 import '../core/interfaces/IMember.sol';
-import '../core/banking/Bank.sol';
 import '../adapters/Onboarding.sol';
 import '../adapters/Financing.sol';
 import '../adapters/Managing.sol';
@@ -24,7 +24,7 @@ contract DaoFactory is Module {
 
         // Canonical Adapters
         addresses[VOTING_MODULE] = votingAddress;
-        addresses[RAGEQUIT_MODULE] = ragequitAddress;
+        addresses[RAGEQUIT_MODULE] = rageQuitAddress;
         addresses[MANAGING_MODULE] = managingAddress;
         addresses[FINANCING_MODULE] = financingAddress;
         addresses[ONBOARDING_MODULE] = onboardingAddress;
@@ -34,7 +34,7 @@ contract DaoFactory is Module {
      * @dev: A new DAO is instantiated with only the Core Modules enabled, to reduce the call cost. 
      *       Another call must be made to enable the default Adapters, see @registerDefaultAdapters.
      */
-    function newDao(uint256 chunkSize, uint256 nbShares, uint256 votingPeriod, address[] initMembers, uint256[] initShares) external returns (address) {
+    function newDao(uint256 chunkSize, uint256 nbShares, uint256 votingPeriod, address[] memory initMembers, uint256[] memory initShares) external returns (address) {
         Registry dao = new Registry();
         address daoAddress = address(dao);
         //Registering Core Modules
@@ -50,12 +50,12 @@ contract DaoFactory is Module {
         IVoting votingContract = IVoting(addresses[VOTING_MODULE]);
         votingContract.registerDao(daoAddress, votingPeriod);
 
-        IMember memberContract = IMember(addresses[MEMBER_MODULE]);
+        IMember memberContract = IMember(addresses[CORE_MODULE]);
 
-        require(initMembers.length === initShares.length, "array length must match");
+        require(initMembers.length == initShares.length, "array length must match");
 
-        for (uint256 i = 0; initMembers.length; i++){
-            memberContract.updateMember(dao, initMember[i], initShares[i]);
+        for (uint256 i = 0; i < initMembers.length; i++){
+            memberContract.updateMember(dao, initMembers[i], initShares[i]);
         }
         
 

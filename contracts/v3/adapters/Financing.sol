@@ -5,6 +5,7 @@ pragma solidity ^0.7.0;
 import './interfaces/IFinancing.sol';
 import '../core/Module.sol';
 import '../core/Registry.sol';
+import '../core/Core.sol';
 import '../adapters/interfaces/IVoting.sol';
 import '../core/interfaces/IProposal.sol';
 import '../core/interfaces/IBank.sol';
@@ -34,12 +35,12 @@ contract FinancingContract is IFinancing, Module, AdapterGuard  {
     function createFinancingRequest(Registry dao, address applicant, address token, uint256 amount, bytes32 details) override external returns (uint256) {
         require(amount > 0, "invalid requested amount");
         require(token == address(0x0), "only raw eth token is supported");
-        //TODO (fforbeck): check if other types of tokens are supported/allowed
+        //TODO: create ERC20 financing request function
 
-        IBank bankContract = IBank(dao.getAddress(BANK_MODULE));
+        IBank bankContract = IBank(dao.getAddress(CORE_MODULE));
         require(bankContract.isNotReservedAddress(applicant), "applicant address cannot be reserved");
         
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         uint256 proposalId = proposalContract.createProposal(dao);
 
         ProposalDetails storage proposal = proposals[address(dao)][proposalId];
@@ -52,7 +53,7 @@ contract FinancingContract is IFinancing, Module, AdapterGuard  {
     }
 
     function sponsorProposal(Registry dao, uint256 proposalId, bytes calldata data) override external onlyMember(dao) {
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         proposalContract.sponsorProposal(dao, proposalId, msg.sender, data);
     }
 
@@ -63,7 +64,7 @@ contract FinancingContract is IFinancing, Module, AdapterGuard  {
         IVoting votingContract = IVoting(dao.getAddress(VOTING_MODULE));
         require(votingContract.voteResult(dao, proposalId) == 2, "proposal need to pass to be processed");
 
-        IBank bankContract = IBank(dao.getAddress(BANK_MODULE));
+        IBank bankContract = IBank(dao.getAddress(CORE_MODULE));
         proposals[address(dao)][proposalId].processed = true;
         bankContract.transferFromGuild(dao, proposal.applicant, proposal.token, proposal.amount);
     }

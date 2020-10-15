@@ -65,7 +65,7 @@ contract VotingContract is IVoting, Module {
     }
 
     function submitVote(Registry dao, uint256 proposalId, uint256 voteValue) external {
-        IMember memberContract = IMember(dao.getAddress(MEMBER_MODULE));
+        IMember memberContract = IMember(dao.getAddress(CORE_MODULE));
         require(memberContract.isActiveMember(dao, msg.sender), "only active members can vote");
         require(voteValue < 3, "only blank (0), yes (1) and no (2) are possible values");
 

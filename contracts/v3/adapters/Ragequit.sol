@@ -27,12 +27,14 @@ contract RagequitContract is Module, AdapterGuard, ReentrancyGuard {
         // FIXME: we still don't track the index to block the ragequit if member voted YES on a non-processed proposal 
         // require(canRagequit(member.highestIndexYesVote), "cannot ragequit until highest index proposal member voted YES on is processed");
         
-        IBank bank = IBank(dao.getAddress(BANK_MODULE));
+        IBank bank = IBank(dao.getAddress(CORE_MODULE));
         bank.ragequit(dao, msg.sender, sharesToBurn);
 
         emit Ragequit(msg.sender, sharesToBurn);
     }
 
+    // @DEV - MAJOR TODO FOR FEATURE PARITY / PRODUCTION
+    
     // can only ragequit if the latest proposal you voted YES on has been processed
     // function canRagequit(uint256 highestIndexYesVote) public view returns (bool) {
     //     require(highestIndexYesVote < proposalQueue.length, "proposal does not exist");

@@ -5,6 +5,7 @@ pragma solidity ^0.7.0;
 import './interfaces/IManaging.sol';
 import '../core/Module.sol';
 import '../core/Registry.sol';
+import '../core/Core.sol';
 import '../adapters/interfaces/IVoting.sol';
 import '../core/interfaces/IProposal.sol';
 import '../core/interfaces/IBank.sol';
@@ -34,12 +35,12 @@ contract ManagingContract is IManaging, Module, AdapterGuard {
     function createModuleChangeRequest(Registry dao, bytes32 moduleId, address moduleAddress) override external onlyMember(dao) returns (uint256) {
         require(moduleAddress != address(0x0), "invalid module address");
 
-        IBank bankContract = IBank(dao.getAddress(BANK_MODULE));
+        IBank bankContract = IBank(dao.getAddress(CORE_MODULE));
         require(bankContract.isNotReservedAddress(moduleAddress), "module address cannot be reserved");
 
         //FIXME: is there a way to check if the new module implements the module interface properly?
         
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         uint256 proposalId = proposalContract.createProposal(dao);
 
         ProposalDetails storage proposal = proposals[proposalId];
@@ -51,7 +52,7 @@ contract ManagingContract is IManaging, Module, AdapterGuard {
     }
 
     function sponsorProposal(Registry dao, uint256 proposalId, bytes calldata data) override external onlyMember(dao) {
-        IProposal proposalContract = IProposal(dao.getAddress(PROPOSAL_MODULE));
+        IProposal proposalContract = IProposal(dao.getAddress(CORE_MODULE));
         proposalContract.sponsorProposal(dao, proposalId, msg.sender, data);
     }
 
