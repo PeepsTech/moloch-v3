@@ -15,7 +15,6 @@ contract RagequitContract is Module, AdapterGuard, ReentrancyGuard {
 
     constructor () {
     }
-
     /* 
      * default fallback function to prevent from sending ether to the contract
      */
@@ -23,6 +22,7 @@ contract RagequitContract is Module, AdapterGuard, ReentrancyGuard {
         revert();
     }
 
+    // @DEV: consider also a ragequit that allows for targeting some, but not all tokens
     function ragequit(Registry dao, uint256 sharesToBurn) public nonReentrant onlyMember(dao) {
         // FIXME: we still don't track the index to block the ragequit if member voted YES on a non-processed proposal 
         // require(canRagequit(member.highestIndexYesVote), "cannot ragequit until highest index proposal member voted YES on is processed");
